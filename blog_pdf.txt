@@ -1,0 +1,174 @@
+###############################################################
+##########################(models.py)##########################
+###############################################################
+from django.db import models
+from django.db.models.deletion import CASCADE
+from django.urls import reverse
+
+
+class Post(models.Model):
+    title = models.CharField(max_length=200)
+    def __str__(self):
+        return self.title
+    
+    author = models.ForeignKey(
+        'auth.User',
+        on_delete=CASCADE,
+    )
+
+    body = models.TextField()
+    
+    def get_absolute_url(self):
+        return reverse('post_detail', args=[str(self.id)])
+
+##############################################################
+##########################(views.py)##########################
+##############################################################
+from django.shortcuts import render
+from django.urls import reverse_lazy
+from django.views.generic import ListView, DetailView
+from .models import Post
+from django.views.generic.edit import CreateView, UpdateView,DeleteView
+
+class BlogListView(ListView):
+    template_name = "home.html"
+    model = Post
+
+class BlogDetailView(DetailView):
+    template_name = "post_detail.html"
+    model = Post
+
+class BlogCreateView(CreateView):
+    template_name = "post_new.html"
+    model = Post
+    fields = ['title', 'author', 'body']
+
+class BlogUpdateView(UpdateView):
+    template_name = 'post_edit.html'
+    model = Post
+    fields = ['title', 'body']
+    
+class BlogDeleteView(DeleteView):
+    template_name = 'post_delete.html'
+    model = Post
+    success_url = reverse_lazy('home')
+#############################################################
+##########################(urls.py)##########################
+#############################################################
+from django.urls import path
+from .import views
+
+urlpatterns = [
+    path('post/<int:pk>/delete/', views.BlogDeleteView.as_view(), name='post_delete'),
+    path('post/<int:pk>/edit/', views.BlogUpdateView.as_view(), name='post_edit'),
+    path('post/new/', views.BlogCreateView.as_view(), name='post_new'),
+    path('post/<int:pk>/', views.BlogDetailView.as_view(), name='post_detail'),
+    path('', views.BlogListView.as_view(), name='home'),
+]
+###############################################################
+##########################(base.html)##########################
+###############################################################
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+    <header>
+        <div class="nav-left" >
+        <h1>
+            <a href="{% url 'home' %}">Django</a>
+        </h1>
+        </div>
+
+        <div class="nav-right" >
+        <a href="{% url 'post_new' %}">+New Blog</a>
+        </div>
+    </header>
+
+    {% block body %}
+    {% endblock %}
+</body>
+</html>
+###############################################################
+##########################(home.html)##########################
+###############################################################
+{% extends 'base.html' %}
+{% block body %}
+{% for post in object_list %}
+
+<div class="post-entry" >
+    <h2>
+        <a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a>
+    </h2>
+    <p>{{ post.body }}</p>
+
+</div>
+
+{% endfor %}
+{% endblock %}
+###############################################################
+##########################(post_detail.html)###################
+###############################################################
+{% extends 'base.html' %}
+{% block body %}
+
+    <div class="post-entry">
+    
+    <h2>{{ object.title }}</h2>
+    <p>{{ object.body }}</p>
+
+    </div>
+
+    <p><a href="{% url 'post_edit' post.pk %}">+Edit Blog</a></p>
+    <p><a href="{% url 'post_delete' post.pk %}">+Delete Blog</a></p>
+
+{% endblock %}
+###############################################################
+##########################(post_new.html)######################
+###############################################################
+{% extends 'base.html' %}
+{% block body %}
+
+<h1>New Post</h1>
+<form action="" method="post">
+    {% csrf_token %} {{ form.as_p }}
+    <input type="submit" value="Save">
+
+</form>
+
+{% endblock %}
+###############################################################
+##########################(post_edit.html)#####################
+###############################################################
+{% extends 'base.html' %}
+{% block body %}
+
+<h1>New Post</h1>
+<form action="" method="post">
+    {% csrf_token %} {{ form.as_p }}
+    <input type="submit" value="Update">
+
+</form>
+
+{% endblock %}
+###############################################################
+##########################(post_delete.html)###################
+###############################################################
+{% extends 'base.html' %}
+{% block body %}
+
+<h1>Delete Post</h1>
+<form action="" method="post">
+    {% csrf_token %} {{ form.as_p }}
+    <p>Are you sure want to delete "{{ post.title }}"?</p>
+    <input type="submit" value="Confirm">
+
+</form>
+
+{% endblock %}

@@ -1,0 +1,81 @@
+1**************** First start database*********
+python manage.py migrate = for first time install database
+1
+
+
+2********** models.py ************
+from django.db import models
+
+class QuoteCategoty(models.Model):
+    title = models.CharField(max_length=50)
+             ****6** def __str__(self):
+			return self.title
+
+class Quote(models.Model):
+    quote = models.TextField()
+    author = models.CharField(max_length=200)
+
+    quote_category = models.ForeignKey(
+        'QuoteCategoty',
+        on_delete= models.CASCADE
+    )
+		****7*** def __str__(self):
+        if len(self.quote) > 50:
+            return self.quote[:50] + "..."
+        return self.quote
+2************************
+
+4********* admin.py *********
+from . models import QuoteCategoty
+from . models import Quote
+
+admin.site.register(QuoteCategoty)
+admin.site.register(Quote)
+***********************************
+3cmd> python manage.py makemigrations
+python manage.py migrate
+python manage.py createsuperuser
+
+5*************** views.py***********
+from django.db.models import query
+from django.shortcuts import render
+from django.views.generic import #ListView
+
+from . models import QuoteCategoty
+from . models import Quote
+
+class HomeView(ListView):
+    template_name = "home.html"
+    model = Quote
+
+    def get_queryset(self):
+        query_set =super().get_queryset()
+        return query_set.select_related
+        ('quote_category')
+****************************************
+8cmd> python manage.py makemigrations
+python manage.py migrate
+
+*****************home.html
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container">
+    {% for quote in object_list %}
+    <div class="card">
+        <div class="card-header">
+          {{ quote_category.title }}
+        </div>
+        <div class="card-body">
+          <blockquote class="blockquote mb-0">
+            <p>{{ quote.quote }}</p>
+            <footer class="blockquote-footer">{{ quote.author }}</footer>
+          </blockquote>
+        </div>
+      </div>
+      <br>
+      {% endfor %}
+</div>
+
+  
+{% endblock %}

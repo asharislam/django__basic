@@ -1,0 +1,255 @@
+********************1**********************
+django-admin startproject config
+python manage.py  startapp blog
+python manage.py migrate
+python manage.py runserver
+
+******************************************
+********************2**********************
+app update on setting.py install 
+add templates folder, host,
+STATICFILES_DIRS = [str(BASE_DIR.joinpath('static'))]
+and create css folder in static . and base.css to css folder in static
+
+******************************************
+
+********************3(config/urls.py)**********************
+from django.contrib import admin
+from django.urls import path, include # new
+urlpatterns = [
+	path('admin/', admin.site.urls),
+	path('', include('blog.urls')), # new
+]
+******************************************
+
+********************4(modeld.py)**********************
+from django.db import models
+
+class Post(models.Model):
+	title = models.CharField(max_length=200)
+	author = models.ForeignKey(
+		'auth.User',
+		on_delete=models.CASCADE,
+	)
+	body = models.TextField()
+	def __str__(self):
+	return self.title
+******************************************
+
+
+********************6(admin.py)**********************
+# blog/admin.py
+from django.contrib import admin
+from .models import Post
+admin.site.register(Post)
+******************************************
+********************8(views.py)**********************
+from django.views.generic import ListView
+from .models import Post
+class BlogListView(ListView):
+	model = Post
+	template_name = 'home.html'
+
+******************************************
+
+********************9(blog/urls.py)**********************
+from django.urls import path
+from .views import BlogListView
+urlpatterns = [
+	path('', BlogListView.as_view(), name='home'),
+]
+
+******************************************
+
+********************5**********************
+python manage.py makemigrations blog
+python manage.py migrate blog
+python manage.py createsuperuser
+******************************************
+
+********************10(base.html)**********************
+<html>
+<head>
+<title>Django blog</title>
+</head>
+<body>
+<header>
+<h1><a href="{% url 'home' %}">Django blog</a></h1>
+</header>
+<div>
+{% block content %}
+{% endblock content %}
+</div>
+</body>
+</html>
+
+******************************************
+
+********************10(home.html)**********************
+{% extends 'base.html' %}
+{% block content %}
+{% for post in object_list %}
+<div class="post-entry">
+<h2><a href="">{{ post.title }}</a></h2>
+<p>{{ post.body }}</p>
+</div>
+{% endfor %}
+{% endblock content %}
+******************************************
+
+#########STATIC########
+
+********************11**********************
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/base.css' %}">
+
+******************************************
+********************12**********************
+page 95 individual block page.
+******************************************
+********************13**********************
+class BlogDetailView(DetailView):
+    template_name = 'post_detail.html'
+    model = Post
+******************************************
+********************14(post_detail.html)**********************
+{% extends 'base.html' %}
+
+{% block body %}
+
+<div class="post-entry" >
+    <h2>{{ object.title }}</h2>
+    <p>{{ object.body }}</p>
+</div>
+
+{% endblock %}
+******************************************
+
+##################################################################
+######### add new_post and delete_post
+********************14(model.py)**********************
+from django.urls import reverse
+def get_absolute_url(self):
+        return reverse('post_detail', args=[str(self.id)])
+
+******************************************
+********************14(post_new.html)**********************
+{% extends 'base.html' %}
+{% block body %}
+
+<h1>New Post</h1>
+<form action="" method="post">
+    {% csrf_token %} {{ form.as_p }}
+    <input type="submit" value="Save">
+
+</form>
+
+{% endblock %}
+******************************************
+********************14(base.html)**********************
+<header>
+        <div class="nav-left" >
+        <h1>
+            <a href="{% url 'home' %}">Django</a>
+        </h1>
+        </div>
+
+        <div class="nav-right" >
+        <a href="{% url 'post_new' %}">+New Blog</a>
+        </div>
+    </header>
+******************************************
+********************14(views.py)**********************
+from django.views.generic.edit import CreateView
+
+class BlogCreateView(CreateView):
+    template_name = "post_new.html"
+    model = Post
+    fields = ['title', 'author', 'body']
+
+******************************************
+********************14(urls.py)**********************
+path('post/new/', views.BlogCreateView.as_view(), name='post_new'),
+
+******************************************
+##################################post_edit
+********************14(post_detail.html)**********************
+ <a href="{% url 'post_edit' post.pk %}">+Edit Blog</a>
+
+******************************************
+********************14(post_edit.html)**********************
+{% extends 'base.html' %}
+{% block body %}
+
+<h1>New Post</h1>
+<form action="" method="post">
+    {% csrf_token %} {{ form.as_p }}
+    <input type="submit" value="Update">
+
+</form>
+
+{% endblock %}
+
+******************************************
+********************14(views.py)**********************
+class BlogUpdateView(UpdateView):
+    template_name = 'post_edit.html'
+    model = Post
+    fields = ['title', 'body']
+
+******************************************
+********************14(urls.py)**********************
+path('post/<int:pk>/edit/', views.BlogUpdateView.as_view(), name='post_edit'),
+******************************************
+
+####################################post Delete#####
+********************14(post_delete.html)**********************
+{% extends 'base.html' %}
+{% block body %}
+
+<h1>New Post</h1>
+<form action="" method="post">
+    {% csrf_token %} {{ form.as_p }}
+    <p>Are you sure want to delete "{{ post.title }}"?</p>
+    <input type="submit" value="Confirm">
+
+</form>
+
+{% endblock %}
+
+******************************************
+********************14(post_detail.html)**********************
+<p><a href="{% url 'post_delete' post.pk %}">+Delete 
+
+******************************************
+********************14(views.py)**********************
+from django.urls import reverse_lazy
+
+class BlogDeleteView(DeleteView):
+    template_name = 'post_delete.html'
+    model = Post
+    success_url = reverse_lazy('home')
+
+******************************************
+********************14(urls.py)**********************
+path('post/<int:pk>/delete/', views.BlogDeleteView.as_view(), name='post_delete'),
+******************************************
+********************14(post_detail.html)**********************
+
+******************************************
+
+********************14(post_detail.html)**********************
+
+******************************************
+********************14(post_detail.html)**********************
+
+******************************************
+********************14(post_detail.html)**********************
+
+******************************************
+********************14(post_detail.html)**********************
+
+******************************************
+********************14(post_detail.html)**********************
+
+******************************************
